@@ -10,6 +10,8 @@
 - [3. Console I/O](#3-console-io)
 - [4. Arithmetic Operations](#4-arithmetic-operations)
 - [5. Assignment Operations](#5-assignment-operations)
+  - [5.1. Creating Variables](#51-creating-variables)
+  - [5.2. Reassigning Variables](#52-reassigning-variables)
 - [6. Comments](#6-comments)
 - [7. Decision Structures](#7-decision-structures)
 - [8. Conditional Operators](#8-conditional-operators)
@@ -43,6 +45,12 @@ npm install typescript @types/node
 ```bash
 npm install ts-node
 ```
+
+> [!NOTE]
+> You can install these globally by adding `-g` after `install`, such as
+```bash
+npm install -g typescript @types/node ts-node
+```
 ## 1.2. Configuring
 Before we can use Typescript, we have to tell it *how* we want to use it.
 
@@ -74,6 +82,9 @@ Explaining how to configure Typescript will make this assignment into a fever dr
 }
 ```
 You can also find [this in the project tree](../tsconfig.json) of this repository, fancy that?
+
+> [!WARNING]
+> All code that is not sourced from the documentation is code that will be using the above `tsconfig.json`. Make sure to adapt the following code to your *own* settings, if you've made changed.
 
 ## 1.3. Compling & Running
 
@@ -156,20 +167,183 @@ console.log("Hello world!");
 ```
 Told ya.
 
-Actually receiving input ***FROM*** the command line, however, is the tricky part.
+Actually receiving input ***FROM*** the command line, however, is the tricky part. However it is possible to do such. Node[.js] has a nice set of built-in libraries almost like Java's packages. We can utilize one of these packages to create a reader to read console.
 
+> [!NOTE]
+> There are Streams for STDIN and STDOUT, you can use the `process` variable in every file to get those. `process.stdin` and `process.stdout`, but I find using this library handy, since we dont need to any additional libraries.
+
+Firstly, at the top of our file, we need to add an import to be able to access the new stuff! At the top of your file, add one of these imports:
+```typescript
+// Uses functions inside of functions
+// like 'object.function((arg) => {});'
+import readline from 'node:readline';
+
+// Uses promises
+// like 'object.function().then((arg) => {});
+import readline from 'node:readline/promises';
+```
+It's up to you how you want your code to be formatted. I personally like promises, but for small examples, function embedding will do the trick (and that's what we'll be doing for this handbook :wink:).
+
+After we've added this import, we now need to create a `readline.Interface`, which is a class, and not an actual interface, relax.
+
+To do so, we can do something like this:
+```typescript
+const rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout
+});
+```
+
+Great! Now we have a `readline.Interface`... how do we actually *use* it. **GREAT QUESTION, MATE**, something like this will do the trick:
+```typescript
+rl.question("Enter amount of layers: ", (sLayer) => {
+    const layer = parseInt(sLayer);
+    const total = (layer * (layer + 1) * (layer + 2 )) / 6;
+    console.log("Total amount of balls: " + total);
+    rl.close();
+});
+```
+*This is an example from this repo, you can find the source code [here](../src/MSOE/2012/Problem4.ts).*
+
+To break that code down, we executing a function on the `readline.Interface` to ask a question to the command line, in this case `"Enter amount of layers: `.
+
+Our result is a `string` as `sLayer` inside of that arrow function. We want that as a number, so we execute `parseInt(sLayer)` to turn it into a number, an *integer* number.
+
+Remember how I said earlier that there *are no* `int`, `float` or anything like that? Well, we can still parse items following the same intution behind integers, the nice thing is we can add decimals to that regardless of if it was parsed as an "int" or "float".
+
+Back to the action, we do some fancy math, and now we have the total amount of balls in a ball pyramid with `x` layers.
 
 # 4. Arithmetic Operations
 
+Of course, any high level programming languages have your standard five (5):
+- `+`, addition
+- `-`, subtraction
+- `*`, multiplication
+- `/`, division
+- `%`, modular (remainder in division)
 
+We also have a static `Math` class, featuring your favourites:
+- `Math.floor()`
+- `Math.pow()`
+- `Math.random()`
+- `Math.min()` or `Math.max()`
+
+Additionally, since Typescript is a demi-statically typed language (I say this because the `any` type exists), **type casting** exists.
+
+Say we have a `Cow` class that extends an `Animal` class:
+```typescript
+class Animal {}
+class Cow extends Animal {}
+```
+If we had...
+```typescript
+let cow: Cow = new Cow();
+```
+...we can cast that cow object into an animal like:
+```typescript
+let cow: Cow = new Cow();
+let animal: Animal = (Animal)cow;
+```
 
 # 5. Assignment Operations
 
+- [5.1. Creating Variables](#51-creating-variables)
+- [5.2. Reassigning Variables](#52-reassigning-variables)
 
+## 5.1. Creating Variables
+There are mainly different ways to create variables, and some make it a lot easier to write code.
+
+Here are some examples of creating variables:
+```typescript
+var a = 1;
+let b = 2;
+const c = 3;
+```
+### `var`
+`var` was the original method to declare variables. There are a few problems with this, and why this is obsolete. Firstly, `var` has a problem, it doesn't like to be contained. Example being this:
+```typescript
+function f(shouldInitialize: boolean) {
+  if (shouldInitialize) {
+    var x = 10;
+  }
+  return x;
+}
+f(true); // returns '10'
+f(false); // returns 'undefined'
+```
+I'm going to let the documentation explain:
+> Some readers might do a double-take at this example. The variable `x` was declared within the `if` block, and yet we were able to access it from outside that block. That’s because `var` declarations are accessible anywhere within their containing function, module, namespace, or global scope - all which we’ll go over later on - regardless of the containing block. Some people call this **var-scoping** or **function-scoping**. Parameters are also function scoped.
+
+*Source: [Typescript Docs - Variable Declaration](https://www.typescriptlang.org/docs/handbook/variable-declarations.html#scoping-rules)*
+
+Which, is why we prefer...
+### `let`
+`let` is declared the exact same as `var` is. The documentation states the syntax is the same, but semantics are different. But, it's what you expect for most declarations.
+
+Most declarations use **block-scoping**, which means a variable declared in a block i.e. `{ }`, stays in the block and doesn't bleed out.
+
+For example, from [the documentation](https://www.typescriptlang.org/docs/handbook/variable-declarations.html#block-scoping)
+> When a variable is declared using `let`, it uses what some call lexical-scoping or block-scoping. Unlike variables declared with `var` whose scopes leak out to their containing function, block-scoped variables are not visible outside of their nearest containing block or `for`-loop.
+```typescript
+function f(input: boolean) {
+  let a = 100;
+  if (input) {
+    // Still okay to reference 'a'
+    let b = a + 1;
+    return b;
+  }
+  // Error: 'b' doesn't exist here
+  return b;
+}
+```
+> Here, we have two local variables `a` and `b`. `a`’s scope is limited to the body of `f` while `b`’s scope is limited to the containing `if` statement’s block.
+
+### `const`
+`const` is similar to `let`, except it cannot be changed once assigned. It's like adding a `final` to a field in Java.
+
+Nothing further about `const`, it's literally a `let`. It's the same scoping rules and everything, but it cannot be changed once initialized.
+
+## 5.2. Reassigning Variables
+
+Reassigning variables is the same as initializing them. Declare the variable's name, then declare the object to set the variable as. Since Javascript is loose with their type declarations, we can do this:
+
+```typescript
+let variable = 0;
+variable = 5;
+variable = "hello";
+variable = {
+  type: "test",
+  value: 1
+}
+
+// etc, etc.
+```
+
+**However**, since Typescript is designed to have statically-typed variables, if you have a variable like:
+```typescript
+let randomNumber: number = Math.random();
+```
+You cannot set the variable to a different type, an example:
+```typescript
+// ..using the variable declared above
+randomNumber = 31; // valid
+randomNumber = "hello!" // invalid
+```
 
 # 6. Comments
 
+Declaring variables is similar to Java or Javascript.
+```typescript
+// Single line comments
 
+/*
+Multi-line comments
+*/
+
+/**
+ * Documentation comments and declarations
+ */
+```
 
 # 7. Decision Structures
 
